@@ -55,6 +55,36 @@ code,.mono{font-family:'JetBrains Mono',monospace}
 #app{display:none;min-height:100vh}
 #app.visible{display:flex;flex-direction:column}
 
+/* INTRO ANIMASI LOGIN (gaya Netflix) */
+#netflix-intro{position:fixed;inset:0;background:#000;z-index:10000;display:flex;align-items:center;justify-content:center;overflow:hidden}
+#netflix-intro.hidden{display:none}
+#netflix-intro.ni-fadeout{animation:niScreenFade .6s cubic-bezier(.4,0,.2,1) forwards}
+@keyframes niScreenFade{0%{opacity:1}100%{opacity:0;visibility:hidden}}
+
+.ni-logo{position:relative;text-align:center;font-family:'Syne',sans-serif;line-height:1;z-index:2}
+.ni-word1{display:block;font-size:clamp(40px,9vw,92px);font-weight:800;color:var(--accent);text-shadow:0 0 60px rgba(200,64,42,.65),0 0 140px rgba(200,64,42,.3)}
+.ni-letter{display:inline-block;opacity:0;transform:scale(.3) translateY(14px);filter:blur(16px);will-change:transform,opacity,filter;animation:niLetterIn 1s cubic-bezier(.16,.84,.44,1) forwards;animation-delay:var(--d,0s)}
+@keyframes niLetterIn{
+  0%{opacity:0;transform:scale(.3) translateY(14px);filter:blur(16px)}
+  55%{opacity:1;transform:scale(1.08) translateY(0);filter:blur(0)}
+  78%{transform:scale(.97)}
+  100%{opacity:1;transform:scale(1)}
+}
+.ni-word2{display:block;font-size:clamp(16px,3.2vw,32px);font-weight:600;letter-spacing:14px;color:#fff;margin-top:14px;opacity:0;transform:translateY(8px);animation:niSubIn .8s cubic-bezier(.16,.84,.44,1) 1.05s forwards}
+@keyframes niSubIn{0%{opacity:0;transform:translateY(8px)}100%{opacity:1;transform:translateY(0)}}
+
+.ni-swoosh{position:absolute;top:0;left:-60%;width:45%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.5),transparent);transform:skewX(-18deg);opacity:0;animation:niSwoosh 1s ease-out .12s forwards;pointer-events:none;mix-blend-mode:screen;z-index:3}
+@keyframes niSwoosh{0%{opacity:0;left:-60%}10%{opacity:.9}55%{opacity:.45}100%{opacity:0;left:130%}}
+
+.ni-flare{position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,rgba(200,64,42,.4),transparent 60%);opacity:0;animation:niFlare 1.3s ease-out .5s forwards;pointer-events:none;z-index:1}
+@keyframes niFlare{0%{opacity:0;transform:scale(.4)}35%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.5)}}
+
+.ni-vignette{position:absolute;inset:0;background:radial-gradient(circle,transparent 30%,rgba(0,0,0,.65) 100%);pointer-events:none;z-index:0}
+
+#netflix-intro.ni-exit .ni-logo{animation:niZoomOut .9s cubic-bezier(.4,0,.2,1) forwards}
+@keyframes niZoomOut{0%{opacity:1;transform:scale(1);filter:blur(0)}100%{opacity:0;transform:scale(1.6);filter:blur(14px)}}
+
+
 /* TOPBAR */
 .topbar{background:var(--ink);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
 .topbar-brand{font-size:18px;font-weight:800;letter-spacing:-0.5px}
@@ -465,52 +495,14 @@ canvas{width:100%!important}
 .rekap-row.total span:last-child{color:var(--accent3)}
 .rekap-row.total-red span:last-child{color:var(--accent)}
 .rekap-row.net-profit span:last-child{font-family:'Syne',sans-serif;font-size:18px;letter-spacing:-.5px}
-/* ===== PRINT STYLES (Android & Desktop) ===== */
-@media print {
-  /* Sembunyikan semua elemen UI kecuali print-area */
-  body > *:not(#print-area) { display: none !important; }
-
-  /* Tampilkan hanya print-area */
-  #print-area { display: block !important; position: static !important; }
-
-  /* Reset body */
-  body {
-    margin: 0 !important;
-    padding: 0 !important;
-    background: #fff !important;
-  }
-
-  /* Pastikan background/warna tercetak */
-  .receipt {
-    border: none !important;
-    box-shadow: none !important;
-    max-width: 100% !important;
-    width: 100% !important;
-    margin: 0 !important;
-    padding: 8px !important;
-    font-size: 11px !important;
-    line-height: 1.6 !important;
-    color: #000 !important;
-    background: #fff !important;
-    font-family: 'Courier New', Courier, monospace !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
-  /* Hindari page break di dalam struk */
-  .receipt { page-break-inside: avoid; }
-
-  /* Sembunyikan elemen yang tidak perlu */
-  .modal-footer,
-  .modal-header,
-  #toast-container { display: none !important; }
-}
+/* Catatan: teknik cetak lama (@media print + #print-area yang menyembunyikan
+   seluruh body) sudah dihapus. Cetak struk sekarang dilakukan lewat iframe
+   tersembunyi yang isinya dokumen HTML berdiri sendiri (lihat printHtmlViaIframe
+   di bagian JS), sehingga tidak bergantung pada CSS halaman utama & jauh lebih
+   konsisten di Chrome Android maupun browser lain. */
 </style>
 </head>
 <body>
-
-<!-- Print Area (untuk window.print() di Android) -->
-<div id="print-area" style="display:none"></div>
 
 <!-- LOGIN -->
 <div id="login-screen">
@@ -533,6 +525,19 @@ canvas{width:100%!important}
     <div id="login-loading" style="display:none;text-align:center;margin-top:12px"><div class="spinner" style="margin:0 auto"></div><div style="font-size:12px;color:var(--ink3);margin-top:6px">Memverifikasi ke Firebase...</div></div>
     <div class="login-hint" id="login-hint-text"></div>
   </div>
+</div>
+
+<!-- INTRO ANIMASI (gaya Netflix) — tampil sesaat setelah login berhasil -->
+<div id="netflix-intro" class="hidden">
+  <div class="ni-vignette"></div>
+  <div class="ni-logo">
+    <span class="ni-word1">
+      <span class="ni-letter" style="--d:0s">S</span><span class="ni-letter" style="--d:.06s">A</span><span class="ni-letter" style="--d:.12s">N</span><span class="ni-letter" style="--d:.18s">A</span>
+    </span>
+    <span class="ni-word2">COFFEE</span>
+    <span class="ni-swoosh"></span>
+  </div>
+  <div class="ni-flare"></div>
 </div>
 
 <!-- APP -->
@@ -1804,9 +1809,9 @@ canvas{width:100%!important}
         <input class="input" id="shift-close-note" placeholder="Contoh: Semua beres, stok kopi habis">
       </div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('modal-close-shift')">Batal</button>
-      <button class="btn btn-danger" onclick="doCloseShift()">🔴 Tutup Shift & Cetak Rekap</button>
+    <div class="modal-footer" style="flex-direction:column;align-items:stretch;gap:10px">
+      <button class="btn btn-danger" onclick="doCloseShift()" style="width:100%;font-size:16px;font-weight:700;padding:14px">🔴 Tutup Shift & Cetak Rekap</button>
+      <button class="btn btn-secondary" onclick="closeModal('modal-close-shift')" style="width:100%">Batal</button>
     </div>
   </div>
 </div>
@@ -2143,6 +2148,56 @@ function getSaleLocalDate(s){
   if(ds && /^\d{4}-\d{2}-\d{2}/.test(ds)) return ds.slice(0,10);
   return '';
 }
+
+// ===================== BUSINESS DAY (HARI BISNIS BERBASIS SHIFT) =====================
+// PERBAIKAN LOGIKA: "hari" pada dashboard TIDAK boleh mengikuti jam 00:00 kalender,
+// melainkan mengikuti siklus buka-tutup buku (shift). Satu shift yang dibuka jam
+// 21:00 dan ditutup jam 02:00 keesokan harinya tetap dihitung sebagai SATU hari,
+// yaitu hari saat shift tersebut DIBUKA.
+function localDateStr(d){
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+// Cari shift yang sedang berlangsung pada suatu waktu (epoch ms)
+function findShiftAtTime(t, shifts){
+  if(isNaN(t)) return null;
+  return shifts.find(sh=>{
+    const ot = new Date(sh.openTime).getTime();
+    if(isNaN(ot)) return false;
+    const ct = sh.closeTime ? new Date(sh.closeTime).getTime() : Date.now();
+    return t >= ot && t <= ct;
+  }) || null;
+}
+
+// Tanggal "hari bisnis" untuk sebuah transaksi/pengeluaran:
+// - Jika waktunya jatuh di dalam rentang sebuah shift (buka..tutup), pakai tanggal SAAT SHIFT DIBUKA.
+//   Ini membuat transaksi lewat tengah malam tetap masuk ke hari shift dibuka (sesuai tutup buku).
+// - Jika tidak ada shift yang cocok (data lama / shift tidak dipakai), fallback ke tanggal kalender biasa.
+function getBusinessDate(s){
+  const dtRaw = s.datetime || s.Datetime || s.timestamp || s.date || s.Date || '';
+  const t = new Date(dtRaw).getTime();
+  const shifts = getShifts();
+  if(!isNaN(t) && shifts && shifts.length){
+    const sh = findShiftAtTime(t, shifts);
+    if(sh && sh.openTime){
+      const ot = new Date(sh.openTime);
+      if(!isNaN(ot)) return localDateStr(ot);
+    }
+  }
+  // Fallback: tidak ada shift yang menaungi transaksi ini -> pakai tanggal kalender
+  return getSaleLocalDate(s);
+}
+
+// "Hari ini" versi hari bisnis: kalau ada shift yang sedang AKTIF (belum ditutup),
+// hari bisnis berjalan adalah tanggal saat shift itu DIBUKA (walaupun sekarang sudah lewat tengah malam).
+// Kalau tidak ada shift aktif, fallback ke tanggal kalender (toko belum buka buku).
+function getBusinessToday(){
+  if(activeShift && activeShift.openTime){
+    const ot = new Date(activeShift.openTime);
+    if(!isNaN(ot)) return localDateStr(ot);
+  }
+  return today();
+}
 function getProducts(){return cache.products||[]}
 function getSales(){return cache.sales||[]}
 function getPurchases(){return cache.purchases||[]} // BUG FIX: null-guard jika cache belum dimuat
@@ -2177,6 +2232,37 @@ function startClock(){
 let currentUser = null;
 function isAdminUser(){ return currentUser && (currentUser.role||'').toLowerCase()==='admin'; }
 
+// ===================== INTRO ANIMASI LOGIN (GAYA NETFLIX) =====================
+// Dipanggil setelah login berhasil. `readyPromise` (opsional) adalah promise yang
+// resolve ketika aplikasi sudah selesai disiapkan (data dimuat & dashboard di-render)
+// SAAT MASIH DI BALIK layar intro. Animasi baru mulai zoom-out & fade begitu KEDUA hal
+// ini selesai: (1) durasi tampil minimum logo, dan (2) aplikasi benar-benar siap —
+// sehingga begitu intro hilang, yang langsung terlihat adalah dashboard, bukan form login.
+function runLoginIntro(readyPromise){
+  return new Promise(resolve=>{
+    const el = document.getElementById('netflix-intro');
+    if(!el){ Promise.resolve(readyPromise).then(resolve); return; }
+    el.classList.remove('hidden','ni-exit','ni-fadeout');
+    // Reset animasi tiap elemen agar bisa diputar ulang jika login lagi (logout -> login)
+    el.querySelectorAll('.ni-letter,.ni-word2,.ni-swoosh,.ni-flare').forEach(w=>{ w.style.animation='none'; });
+    void el.offsetWidth; // force reflow
+    el.querySelectorAll('.ni-letter,.ni-word2,.ni-swoosh,.ni-flare').forEach(w=>{ w.style.animation=''; });
+
+    const minHold = new Promise(r=>setTimeout(r,2400)); // waktu tampil minimum logo (entrance + tahan)
+    Promise.all([minHold, Promise.resolve(readyPromise)]).then(()=>{
+      el.classList.add('ni-exit'); // logo zoom-out + blur, seperti "cut" ke konten
+      setTimeout(()=>{
+        el.classList.add('ni-fadeout'); // layar fade cepat ke hitam lalu disembunyikan
+        setTimeout(()=>{
+          el.classList.add('hidden');
+          el.classList.remove('ni-exit','ni-fadeout');
+          resolve();
+        }, 600);
+      }, 900);
+    });
+  });
+}
+
 async function doLogin(){
   const u = document.getElementById('login-user').value.trim();
   const p = document.getElementById('login-pass').value.trim();
@@ -2190,34 +2276,55 @@ async function doLogin(){
     if(result.success){
       currentUser = result.user;
       document.getElementById('login-error').style.display='none';
+
+      // Sembunyikan form login SEKARANG JUGA. Overlay intro (z-index lebih tinggi,
+      // background solid) langsung menutupi seluruh layar setelah ini, jadi form
+      // login tidak akan pernah terlihat lagi sampai logout berikutnya.
       document.getElementById('login-screen').classList.add('hidden');
-      document.getElementById('app').classList.add('visible');
-      document.getElementById('user-display').textContent = currentUser.name;
-      document.getElementById('user-avatar').textContent = (currentUser.name||'U')[0].toUpperCase();
-      // FIX: tampilkan elemen admin-only dengan display yang sesuai konteks element
-      document.querySelectorAll('.admin-only').forEach(el=>{
-        if(!isAdminUser()){ el.style.display='none'; return; }
-        // nav-item pakai flex; div/span default pakai block
-        el.style.display = el.classList.contains('nav-item') ? 'flex' : 'block';
-      });
-      startClock();
-      // Muat semua data dulu, BARU render dashboard
-      showLoading('Memuat data...');
-      await Promise.all([loadAllData(true), loadStrukSettings()]);
-      loadBahanBakuLocal();
-      hideLoading();
-      // Aktifkan halaman dashboard menggunakan data-page selector
-      document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
-      document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));
-      document.getElementById('page-dashboard').classList.add('active');
-      const dashNav = document.querySelector('.nav-item[data-page="dashboard"]');
-      if(dashNav) dashNav.classList.add('active');
-      renderDashboard();
+
+      // Siapkan aplikasi (muat data + render dashboard) SAAT MASIH DI BALIK overlay
+      // intro. Begitu siap, baru intro melakukan zoom-out & fade — jadi begitu intro
+      // hilang, yang terlihat adalah dashboard yang sudah jadi, persis seperti Netflix
+      // yang langsung "cut" dari logo ke konten, tanpa balik ke layar sebelumnya.
+      const prepareApp = (async()=>{
+        await Promise.all([loadAllData(true), loadStrukSettings()]);
+        loadBahanBakuLocal();
+
+        document.getElementById('app').classList.add('visible');
+        document.getElementById('user-display').textContent = currentUser.name;
+        document.getElementById('user-avatar').textContent = (currentUser.name||'U')[0].toUpperCase();
+        // FIX: tampilkan elemen admin-only dengan display yang sesuai konteks element
+        document.querySelectorAll('.admin-only').forEach(el=>{
+          if(!isAdminUser()){ el.style.display='none'; return; }
+          // nav-item pakai flex; div/span default pakai block
+          el.style.display = el.classList.contains('nav-item') ? 'flex' : 'block';
+        });
+        startClock();
+        // Aktifkan halaman dashboard menggunakan data-page selector
+        document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));
+        document.getElementById('page-dashboard').classList.add('active');
+        const dashNav = document.querySelector('.nav-item[data-page="dashboard"]');
+        if(dashNav) dashNav.classList.add('active');
+        renderDashboard();
+      })();
+
+      await runLoginIntro(prepareApp);
       toast('Selamat datang, '+currentUser.name+' ✓','success');
     } else {
       showLoginError(result.message||'Username atau password salah!');
     }
   } catch(err) {
+    // Jika gagal SETELAH login sukses (form sudah disembunyikan & sedang menyiapkan
+    // data di balik overlay intro), kembalikan ke layar login agar tidak macet di
+    // layar hitam — jangan biarkan form login tetap tersembunyi tanpa ada apa pun.
+    if(currentUser){
+      currentUser = null;
+      const intro = document.getElementById('netflix-intro');
+      if(intro){ intro.classList.add('hidden'); intro.classList.remove('ni-exit','ni-fadeout'); }
+      document.getElementById('app').classList.remove('visible');
+      document.getElementById('login-screen').classList.remove('hidden');
+    }
     showLoginError('Gagal terhubung ke Firebase: '+err.message);
   } finally {
     document.getElementById('login-btn-el').style.display='block';
@@ -2478,11 +2585,19 @@ function fmtDateOnly(d){
 }
 
 function renderDashboard(){
-  const dt=new Date();
-  document.getElementById('dash-date').textContent=dt.toLocaleDateString('id-ID',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const businessTodayStr = getBusinessToday();
+  // Tampilkan tanggal sesuai HARI BISNIS (tanggal saat shift dibuka), bukan tanggal kalender device,
+  // supaya konsisten dengan transaksi yang ditampilkan di bawahnya — terutama saat shift masih
+  // berjalan lewat tengah malam.
+  const businessDateObj = new Date(businessTodayStr+'T00:00:00');
+  let dashDateLabel = businessDateObj.toLocaleDateString('id-ID',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  if(activeShift){
+    dashDateLabel += ` · Shift dibuka ${fmtTimeShift(activeShift.openTime)}${businessTodayStr!==today()?' (lewat tengah malam)':''}`;
+  }
+  document.getElementById('dash-date').textContent=dashDateLabel;
   const products=getProducts(), sales=getSales(), purchases=getPurchases();
-  const todayStr = today();
-  const todaySales=sales.filter(s=>getSaleLocalDate(s)===todayStr);
+  const todayStr = businessTodayStr;
+  const todaySales=sales.filter(s=>getBusinessDate(s)===todayStr);
   const todayRevenue=todaySales.reduce((a,s)=>a+Number(s.total||0),0);
   const todayHPP=todaySales.reduce((a,s)=>a+(s.items||[]).reduce((b,i)=>b+(Number(i.buyPrice)||0)*(Number(i.qty)||0),0),0);
   // Gunakan ATS untuk menentukan status stok produk berresep
@@ -2513,14 +2628,14 @@ function renderDashboard(){
     banner.innerHTML=`<div class="low-stock-banner"><span style="font-size:24px">⚠️</span><div><strong>${lowStock.length+outStock.length} produk</strong> perlu restok! ${outStock.map(p=>`<span class="tag tag-red" style="margin-left:4px">${p.name} HABIS</span>`).join('')}</div></div>`;
   } else banner.innerHTML='';
 
-  // Chart 7 hari
+  // Chart 7 hari (HARI BISNIS, berdasarkan tanggal buka shift — bukan tanggal kalender 00:00)
   const labels=[],dataRev=[],dataProfit=[];
   for(let i=6;i>=0;i--){
-    const d=new Date();d.setDate(d.getDate()-i);
-    // Gunakan tanggal lokal (bukan UTC) agar konsisten dengan getSaleLocalDate & today()
-    const ds=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const d=new Date(businessTodayStr+'T00:00:00');d.setDate(d.getDate()-i);
+    // Gunakan tanggal lokal hari bisnis agar konsisten dengan getBusinessDate & getBusinessToday()
+    const ds=localDateStr(d);
     labels.push(d.toLocaleDateString('id-ID',{weekday:'short',day:'numeric'}));
-    const dSales=sales.filter(s=>getSaleLocalDate(s)===ds);
+    const dSales=sales.filter(s=>getBusinessDate(s)===ds);
     const rev=dSales.reduce((a,s)=>a+Number(s.total||0),0);
     const hpp=dSales.reduce((a,s)=>a+(s.items||[]).reduce((b,i)=>b+(Number(i.buyPrice)||0)*(Number(i.qty)||0),0),0);
     dataRev.push(rev);dataProfit.push(rev-hpp);
@@ -2591,14 +2706,14 @@ function renderPOS(){
       const r = calcShiftRekap(activeShift);
       const elapsed = fmtDuration(Date.now() - new Date(activeShift.openTime).getTime());
       banner.style.display = 'block';
-      banner.innerHTML = `<div style="background:linear-gradient(90deg,#d4f0e2,#e8faf0);border:1.5px solid #90d0b0;border-radius:10px;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      banner.innerHTML = `<div style="background:linear-gradient(90deg,#d4f0e2,#e8faf0);border:1.5px solid #90d0b0;border-radius:10px;padding:12px 16px">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px">
           <span style="font-size:13px;font-weight:700;color:var(--accent3)">🟢 Shift Aktif</span>
           <span style="font-size:12px;color:var(--ink2)">Kasir: <strong>${activeShift.openBy||'-'}</strong></span>
           <span style="font-size:12px;color:var(--ink3)">Buka: <strong>${fmtTimeShift(activeShift.openTime)}</strong> · ${elapsed}</span>
           <span style="font-size:12px;color:var(--ink2)">Omset: <strong style="color:var(--accent3)">${fmt(r.totalRevenue)}</strong> (${r.trxCount} trx)</span>
         </div>
-        <button class="btn btn-danger btn-sm" onclick="showPage('shift');setTimeout(confirmCloseShift,200)" style="font-size:11px;padding:5px 12px">🔴 Close Shift</button>
+        <button class="btn btn-danger" onclick="showPage('shift');setTimeout(confirmCloseShift,200)" style="width:100%;font-size:14px;font-weight:700;padding:12px">🔴 Tutup Shift</button>
       </div>`;
     } else {
       banner.style.display = 'block';
@@ -3055,64 +3170,102 @@ async function showReceipt(sale){
   openModal('modal-receipt');
   syncReceiptFotoUI();
 }
-function printReceipt(){
-  // Salin konten struk ke print-area agar @media print bisa menampilkannya
-  const src = document.getElementById('receipt-content');
-  const pa  = document.getElementById('print-area');
-  if(src && pa){
-    pa.innerHTML = src.innerHTML;
+// ===================== WEB PRINT (dialog print sistem / WiFi-USB printer) =====================
+// Strategi: bangun dokumen HTML berdiri sendiri (CSS terbungkus di dalamnya),
+// lalu cetak lewat <iframe> tersembunyi. Ini jauh lebih konsisten daripada
+// teknik lama (menyembunyikan seluruh <body> via @media print + window.print
+// di dalam setTimeout) yang sering gagal di Chrome Android karena:
+//  1) delay sebelum window.print() membuat browser kehilangan konteks
+//     "user activation" dari tap pengguna, sehingga dialog print tidak terbuka.
+//  2) trik menyembunyikan body kadang membuat halaman cetak kosong/blank di
+//     beberapa versi WebView Android karena reflow belum selesai saat dicetak.
+// Dengan iframe: konten cetak benar-benar terisolasi dari halaman utama, dan
+// window.print() dipanggil sesegera mungkin (begitu iframe selesai memuat),
+// sehingga tetap berada dalam jendela aktivasi gesture pengguna.
+
+function buildPrintDocument(bodyHtml, opts){
+  opts = opts || {};
+  const maxWidth = opts.maxWidth || '320px';
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${opts.title||'Cetak'}</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{background:#fff}
+  body{
+    font-family:'Courier New',Courier,monospace;
+    font-size:12px;line-height:1.55;color:#000;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact;
   }
+  .receipt{max-width:${maxWidth};margin:0 auto;padding:10px}
+  .receipt-center{text-align:center}
+  .receipt-line{border-top:1px dashed #000;margin:8px 0}
+  .receipt-row{display:flex;justify-content:space-between;gap:8px}
+  .receipt-row span:first-child{word-break:break-word}
+  img{max-width:100%;display:block;margin:0 auto}
+  @page{margin:4mm}
+  @media print{ body{margin:0} }
+</style>
+</head><body>${bodyHtml}</body></html>`;
+}
 
-  const ua = navigator.userAgent || '';
-  const isAndroid = /android/i.test(ua);
-  const isSamsungBrowser = /samsungbrowser/i.test(ua);
-
-  // Samsung Browser: tidak bisa pakai window.print() langsung di iframe/modal,
-  // buka popup window baru dengan konten struk, lalu print dari sana.
-  if(isSamsungBrowser){
-    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width,initial-scale=1">
-      <style>
-        body{margin:0;padding:0;background:#fff;font-family:'Courier New',monospace;font-size:12px}
-        .receipt{max-width:320px;margin:0 auto;padding:16px}
-        .receipt-center{text-align:center}
-        .receipt-line{border-top:1px dashed #000;margin:8px 0}
-        .receipt-row{display:flex;justify-content:space-between}
-        @media print{body{margin:0;padding:0}}
-      </style>
-      </head><body><div class="receipt">${src ? src.innerHTML : pa.innerHTML}</div>
-      <script>window.onload=function(){setTimeout(function(){window.print();setTimeout(function(){window.close();},500);},400);}<\/script>
-      </body></html>`;
-    const pw = window.open('','_blank','width=400,height=600');
-    if(pw){
-      pw.document.write(html);
-      pw.document.close();
-    } else {
-      toast('Pop-up diblokir. Izinkan pop-up di browser lalu coba lagi.', 'warn');
-    }
-    setTimeout(function(){ if(pa) pa.innerHTML=''; }, 2000);
-    return;
-  }
-
-  // Android Chrome & Desktop: gunakan window.print() dengan delay cukup
-  // untuk reflow selesai (tablet lebih lambat dari laptop → 800ms)
-  const delay = isAndroid ? 800 : 300;
-  const btn = document.getElementById('btn-print-receipt');
+// Cetak dokumen HTML lewat iframe tersembunyi. btnId/btnLabel opsional untuk
+// mengembalikan state tombol setelah dialog print terbuka/selesai diproses.
+function printHtmlViaIframe(htmlDoc, btnId, btnLabel){
+  const btn = btnId ? document.getElementById(btnId) : null;
   if(btn){ btn.disabled = true; btn.textContent = '⏳ Menyiapkan...'; }
 
-  setTimeout(function(){
-    window.focus(); // penting di beberapa Android agar dialog print muncul
+  const restoreBtn = ()=>{ if(btn){ btn.disabled = false; btn.textContent = btnLabel || btn.textContent; } };
+
+  // Bersihkan iframe cetak sebelumnya kalau masih nyangkut (mis. proses sebelumnya
+  // terputus sebelum selesai dibersihkan).
+  const old = document.getElementById('print-frame');
+  if(old) old.remove();
+
+  const iframe = document.createElement('iframe');
+  iframe.id = 'print-frame';
+  // Catatan: JANGAN pakai display:none — beberapa WebView Android tidak akan
+  // memproses/cetak iframe yang display:none. Sembunyikan secara visual saja
+  // dengan menempatkannya di luar area pandang & ukuran 0.
+  iframe.setAttribute('style', 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden;');
+  iframe.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(iframe);
+
+  let triggered = false;
+  const triggerPrint = ()=>{
+    if(triggered) return;
+    triggered = true;
     try {
-      window.print();
-    } catch(e) {
-      toast('Gagal print: ' + e.message, 'error');
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+    } catch(e){
+      toast('Gagal membuka dialog print: ' + e.message, 'error');
     }
-    // Bersihkan print-area setelah dialog print muncul
-    setTimeout(function(){
-      if(pa) pa.innerHTML = '';
-      if(btn){ btn.disabled = false; btn.textContent = '🖨️ Print Struk'; }
-    }, isAndroid ? 2000 : 1000);
-  }, delay);
+    restoreBtn();
+    // Beri waktu agar dialog print (yang non-blocking di sebagian browser) sempat
+    // terbuka sebelum iframe-nya dilepas dari DOM.
+    setTimeout(()=>{ if(iframe.parentNode) iframe.remove(); }, 1500);
+  };
+
+  iframe.onload = triggerPrint;
+  // Fallback: sebagian WebView/Android lama kadang tidak memicu event "load"
+  // pada iframe yang diisi lewat document.write(). Pastikan tetap tercetak.
+  setTimeout(triggerPrint, 1200);
+
+  const doc = iframe.contentWindow.document;
+  doc.open();
+  doc.write(htmlDoc);
+  doc.close();
+}
+
+function printReceipt(){
+  const src = document.getElementById('receipt-content');
+  if(!src || !src.innerHTML.trim()){
+    toast('Tidak ada struk untuk dicetak', 'warn');
+    return;
+  }
+  const htmlDoc = buildPrintDocument(src.innerHTML, {title:'Cetak Struk', maxWidth:'320px'});
+  printHtmlViaIframe(htmlDoc, 'btn-print-receipt', '🖨️ Print Struk');
 }
 
 // ===================== BLUETOOTH THERMAL PRINTER =====================
@@ -6448,11 +6601,13 @@ function renderShiftStatus(){
         <div class="shift-meta">Dibuka oleh <strong>${activeShift.openBy||'-'}</strong> · ${fmtDateFullShift(activeShift.openTime)}</div>
         <div class="shift-meta">Jam buka: <strong>${fmtTimeShift(activeShift.openTime)}</strong></div>
         ${activeShift.openNote?`<div class="shift-meta" style="margin-top:6px;font-style:italic">"${activeShift.openNote}"</div>`:''}
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:22px;padding-top:20px;border-top:1px solid rgba(26,24,20,.1)">
+          <button class="btn btn-success btn-lg" onclick="showPage('pos')" style="font-size:14px">🛒 Lanjut ke Kasir</button>
+          <button class="btn btn-danger btn-lg" onclick="confirmCloseShift()" style="font-size:16px;font-weight:700;min-width:220px">🔴 Tutup Shift</button>
+        </div>
       </div>`;
     if(actions) actions.innerHTML = `
-      <button class="btn btn-secondary btn-sm" onclick="renderShift()">↻ Refresh</button>
-      <button class="btn btn-success" onclick="showPage('pos')" style="font-size:14px;padding:10px 20px">🛒 Lanjut ke Kasir</button>
-      <button class="btn btn-danger" onclick="confirmCloseShift()" style="font-size:14px;padding:10px 20px">🔴 Close Shift</button>`;
+      <button class="btn btn-secondary btn-sm" onclick="renderShift()">↻ Refresh</button>`;
 
     if(shiftTimerInterval) clearInterval(shiftTimerInterval);
     shiftTimerInterval = setInterval(()=>{
